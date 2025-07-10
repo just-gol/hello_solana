@@ -1,15 +1,18 @@
 use borsh::BorshDeserialize;
 use solana_program::{
-    account_info::{AccountInfo, next_account_info},
+    account_info::{next_account_info, AccountInfo},
     entrypoint::{self, ProgramResult},
     msg,
     program::{invoke, invoke_signed},
     program_pack::Pack,
     pubkey::Pubkey,
     system_instruction,
-    sysvar::{Sysvar, rent::Rent},
+    sysvar::{rent::Rent, Sysvar},
 };
-use spl_token::{instruction::initialize_mint, state::Mint};
+use spl_token::{
+    instruction::{initialize_mint, mint_to},
+    state::Mint,
+};
 
 use crate::instruction::TokenInstruction;
 
@@ -84,6 +87,63 @@ impl Processor {
         Ok(())
     }
     fn mint_token(accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+        let accounts_iter = &mut accounts.iter();
+        let mint_account = next_account_info(accounts_iter)?;
+        let associated_token_account = next_account_info(accounts_iter)?;
+        let rent_sysvar = next_account_info(accounts_iter)?;
+        let payer = next_account_info(accounts_iter)?;
+        let system_program = next_account_info(accounts_iter)?;
+        let token_program = next_account_info(accounts_iter)?;
+        let associated_token_program = next_account_info(accounts_iter)?;
+
+        msg!("ATA is:{:?}", associated_token_account);
+
+        if associated_token_account.lamports() == 0 {
+            msg!("Creating assocated token account...");
+            let create_ata_tx =
+                &spl_associated_token_account::instruction::create_associated_token_account(
+                    payer.key,
+                    payer.key,
+                    mint_account.key,
+                    token_program.key,
+                );
+            invoke(
+                create_ata_tx,
+                &[
+                    payer.clone(),
+                    associated_token_account.clone(),
+                    mint_account.clone(),
+                    system_program.clone(),
+                    token_program.clone(),
+                    rent_sysvar.clone(),
+                    associated_token_program.clone(),
+                ],
+            )?;
+        }
+
+        msg!("Minting {} tokens to ata...", amount);
+
+        let mint_ix = &mint_to(
+            token_program.key,
+            mint_account.key,
+            associated_token_account.key,
+            payer.key,
+            &[payer.key],
+            amount,
+        )?;
+
+        invoke(
+            mint_ix,
+            &[
+                mint_account.clone(),
+                payer.clone(),
+                associated_token_account.clone(),
+                token_program.clone(),
+            ],
+        )?;
+
+        msg!("Tokens Minted to ata success");
+
         Ok(())
     }
 }
