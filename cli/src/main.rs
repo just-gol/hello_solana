@@ -7,9 +7,12 @@ use std::{str::FromStr, vec};
 // G4tuJ5f7n3mXzmrtRk5dnt9MJkF6JX4ou6bJQYe7kos6
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_client::rpc_client::RpcClient;
+use solana_program::example_mocks::solana_sdk::system_instruction;
 use solana_sdk::{
     account::Account,
+    config::program,
     instruction::{AccountMeta, Instruction},
+    lamports,
     pubkey::Pubkey,
     signature::{Keypair, read_keypair_file},
     signer::Signer,
@@ -25,7 +28,7 @@ pub enum TokenInstruction {
 }
 
 #[test]
-fn test_fn() {
+fn test_fn_token() {
     let rpc_client = RpcClient::new("http://127.0.0.1:8899".to_string());
     // 付款
 
@@ -59,7 +62,7 @@ fn create_token(
     let instrution_data = borsh::to_vec(&TokenInstruction::CreateToken { decimals }).unwrap();
 
     // 构建账户元数据
-    let accounts = vec![
+    let accounts: Vec<AccountMeta> = vec![
         AccountMeta::new(mint_account.pubkey(), true),
         AccountMeta::new_readonly(*mint_authority, false),
         AccountMeta::new_readonly(payer.pubkey(), false),
@@ -133,4 +136,53 @@ fn mint(
     println!("{:?}", r);
     println!("create mint success");
     Ok(())
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct GreetingAccount {
+    pub count: u32,
+}
+
+#[test]
+fn test_fn_count() {
+    let rpc_client = RpcClient::new("http://localhost:8899".to_string());
+    let payer = read_keypair_file("/home/lsy/.config/solana/id.json").expect("failed");
+    let program_id = Pubkey::from_str("6dxkWb9FndEDrByTZnPjEKqwYDc19P8qEt9CX2Yj7Ysc").unwrap();
+    let greeting_account = Keypair::new();
+    let space = 4;
+    let lamports = rpc_client
+        .get_minimum_balance_for_rent_exemption(space)
+        .unwrap();
+
+    // 类似anchor的#[account(init)]
+    // create_account 是为了创建一个“专门用于存储你自定义数据（如 GreetingAccount）”的账户
+    let create_tx = system_instruction::create_account(
+        &payer.pubkey(),            // 👈 谁来付款（payer）
+        &greeting_account.pubkey(), // 👈 要创建的账户的地址（一般是 Keypair::new().pubkey()）
+        lamports,                   // 👈 给这个账户转多少 SOL（需要覆盖租金）
+        space as u64,               // 👈 分配多少空间（单位：字节）
+        &program_id,                // 👈 这个账户归哪个程序控制（比如你的合约ID）
+    );
+
+    // d调用hello 指令
+    let greet_ix = Instruction {
+        program_id,
+        accounts: vec![AccountMeta::new(greeting_account.pubkey(), false)],
+        data: vec![],
+    };
+
+    //构造发送交易
+    let recent_blockhash = rpc_client.get_latest_blockhash();
+    let tx = Transaction::new_signed_with_payer(
+        &[create_tx, greet_ix],
+        Some(&payer.pubkey()),
+        &[&payer, &greeting_account],
+        recent_blockhash.unwrap(),
+    );
+    let sig = rpc_client.send_and_confirm_transaction(&tx);
+    println!("Transaction sent: {}", sig.unwrap());
+
+    let acc = rpc_client.get_account(&greeting_account.pubkey()).unwrap();
+    let result = GreetingAccount::try_from_slice(&acc.data).unwrap();
+    println!("Greeting count is: {}", result.count);
 }
