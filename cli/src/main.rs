@@ -6,7 +6,7 @@ use std::{str::FromStr, vec};
 // 7gLcZmqEbcgM6Bk5sjKuHmCUenfuQ2pSMYSLUTRcVzyW   部署的时候program id
 // G4tuJ5f7n3mXzmrtRk5dnt9MJkF6JX4ou6bJQYe7kos6
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_client::rpc_client::RpcClient;
+use solana_client::{client_error::reqwest::Error, rpc_client::RpcClient};
 use solana_program::example_mocks::solana_sdk::system_instruction;
 use solana_sdk::{
     account::Account,
@@ -185,4 +185,112 @@ fn test_fn_count() {
     let acc = rpc_client.get_account(&greeting_account.pubkey()).unwrap();
     let result = GreetingAccount::try_from_slice(&acc.data).unwrap();
     println!("Greeting count is: {}", result.count);
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub enum ScoreInstruction {
+    /// 初始化账户
+    InitScore,
+    /// 增加分数
+    AddScore { amount: u64 },
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Debug)]
+pub struct ScoreAccount {
+    pub player: Pubkey,
+    pub score: u64,
+}
+
+#[test]
+fn test_fn_score() {
+    let client = RpcClient::new("http://127.0.0.1:8899".to_string());
+
+    let payer = read_keypair_file("/home/lsy/.config/solana/id.json").expect("failed");
+    // 合约id
+    let program_id: Pubkey =
+        Pubkey::from_str("9ndawcKy5quHkzjhnqDViDmnmi3VJiZ5hcs3GkLnb4wA").unwrap();
+    // 账户
+    let score_account: Keypair = Keypair::new();
+
+    let space = std::mem::size_of::<Pubkey>() + std::mem::size_of::<u64>();
+
+    let lamports = client
+        .get_minimum_balance_for_rent_exemption(space)
+        .unwrap();
+
+    let create_tx: Instruction = system_instruction::create_account(
+        &payer.pubkey(),
+        &score_account.pubkey(),
+        lamports,
+        space as u64,
+        &program_id,
+    );
+
+    _ = init(&client, &create_tx, &score_account, &program_id, &payer);
+    _ = add(&client, &score_account, &program_id, &payer);
+    _ = add(&client, &score_account, &program_id, &payer);
+}
+
+fn init(
+    client: &RpcClient,
+    create_tx: &Instruction,
+    score_account: &Keypair,
+    program_id: &Pubkey,
+    payer: &Keypair,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // 创建init指令
+    let instruction = borsh::to_vec(&ScoreInstruction::InitScore).unwrap();
+    let init_tx = Instruction {
+        program_id: *program_id,
+        accounts: vec![AccountMeta::new(score_account.pubkey(), false)],
+        data: instruction,
+    };
+
+    // 发送交易
+    let recent_blockhash = client.get_latest_blockhash()?;
+    println!("init hash:{}", recent_blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[create_tx.clone(), init_tx],
+        Some(&payer.pubkey()),
+        &[&payer, &score_account],
+        recent_blockhash,
+    );
+    let sig = client.send_and_confirm_transaction(&tx)?;
+    println!("Transaction sig: {}", sig);
+
+    let acc = client.get_account(&score_account.pubkey()).unwrap();
+    let result = ScoreAccount::try_from_slice(&acc.data).unwrap();
+    println!("score is: {}", result.score);
+    Ok(())
+}
+fn add(
+    client: &RpcClient,
+    score_account: &Keypair,
+    program_id: &Pubkey,
+    payer: &Keypair,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // 创建init指令
+    let instruction = borsh::to_vec(&ScoreInstruction::AddScore { amount: 1 }).unwrap();
+    let add_tx = Instruction {
+        program_id: *program_id,
+        accounts: vec![AccountMeta::new(score_account.pubkey(), false)],
+        data: instruction,
+    };
+
+    // 发送交易
+    let recent_blockhash = client.get_latest_blockhash()?;
+    println!("add hash:{}", recent_blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[add_tx],
+        Some(&payer.pubkey()),
+        &[&payer],
+        recent_blockhash,
+    );
+    let sig = client.send_and_confirm_transaction(&tx)?;
+    println!("Transaction sig: {}", sig);
+
+    let acc = client.get_account(&score_account.pubkey()).unwrap();
+    let result = ScoreAccount::try_from_slice(&acc.data).unwrap();
+    println!("add score is: {}", result.score);
+    Ok(())
 }
