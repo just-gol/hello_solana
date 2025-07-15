@@ -33,7 +33,7 @@ fn test_fn_token() {
     // 付款
 
     let payer = read_keypair_file("/home/lsy/.config/solana/id.json").expect("failed");
-    let program_id = Pubkey::from_str("G4tuJ5f7n3mXzmrtRk5dnt9MJkF6JX4ou6bJQYe7kos6").unwrap();
+    let program_id = Pubkey::from_str("6aBET2K3Wf43CuT7YS3qMBBzq6FqWkbGUNZVbdpHmFC1").unwrap();
 
     // 生成mint account
     let mint_account = Keypair::new();

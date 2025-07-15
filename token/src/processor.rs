@@ -52,15 +52,16 @@ impl Processor {
             token_program.key,
         );
 
-        invoke(
-            create_account_ix,
-            &[
-                mint_account.clone(),
-                payer.clone(),
-                system_program.clone(),
-                token_program.clone(),
-            ],
-        )?;
+        // invoke(
+        //     create_account_ix,
+        //     &[
+        //         mint_account.clone(),
+        //         payer.clone(),
+        //         system_program.clone(),
+        //         token_program.clone(),
+        //     ],
+        // )?;
+        invoke(create_account_ix, &[payer.clone(), mint_account.clone()])?;
 
         // 初始化
         let mint_init_ix = &initialize_mint(
@@ -72,14 +73,19 @@ impl Processor {
         )?;
 
         msg!("initialize_mint account...");
+        // invoke_signed(
+        //     mint_init_ix,
+        //     &[
+        //         mint_account.clone(),
+        //         rent_sysvar.clone(),
+        //         token_program.clone(),
+        //         mint_authority.clone(),
+        //     ],
+        //     &[],
+        // )?;
         invoke_signed(
             mint_init_ix,
-            &[
-                mint_account.clone(),
-                rent_sysvar.clone(),
-                token_program.clone(),
-                mint_authority.clone(),
-            ],
+            &[mint_account.clone(), rent_sysvar.clone()],
             &[],
         )?;
         msg!("SPL Token Mint create success");
@@ -93,7 +99,7 @@ impl Processor {
         let rent_sysvar = next_account_info(accounts_iter)?;
         let payer = next_account_info(accounts_iter)?;
         let system_program = next_account_info(accounts_iter)?;
-        let token_program = next_account_info(accounts_iter)?;
+        let token_program: &AccountInfo<'_> = next_account_info(accounts_iter)?;
         let associated_token_program = next_account_info(accounts_iter)?;
 
         msg!("ATA is:{:?}", associated_token_account);
