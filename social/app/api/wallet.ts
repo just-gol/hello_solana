@@ -3,6 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { Social } from "../../target/types/social";
 
 
+// 使用环境变量中定义的 RPC 节点 + 钱包，创建 provider
 let provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
@@ -10,6 +11,7 @@ const program = anchor.workspace.social as Program<Social>;
 
 export { program, provider };
 
+// 获取本地钱包地址
 export function useDefauleWallet() {
   return anchor.Wallet.local();
 }

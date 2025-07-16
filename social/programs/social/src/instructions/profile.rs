@@ -13,7 +13,7 @@ pub struct CreateProfile<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8+SolanaTwitterProfile::INIT_SPACE,
+        space = 8 + SolanaTwitterProfile::INIT_SPACE,
         seeds = [
             SolanaTwitterProfile::PROFILE_SEED.as_bytes(),
             authority.key().as_ref(),

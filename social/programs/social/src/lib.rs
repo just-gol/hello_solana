@@ -9,7 +9,17 @@ use instructions::*;
 pub mod social {
     use super::*;
 
+    // 创建用户
     pub fn create_profile(ctx: Context<CreateProfile>, display_name: String) -> Result<()> {
         instructions::create_profile(ctx, display_name)
+    }
+
+    // 发帖
+    pub fn create_tweet(ctx: Context<CreateTweet>, body: String) -> Result<()> {
+        instructions::create_tweet(ctx, body)
+    }
+
+    pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
+        instructions::create_like(ctx)
     }
 }
