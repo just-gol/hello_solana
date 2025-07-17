@@ -57,7 +57,10 @@ export async function createLike(wallet: anchor.Wallet, tweetPda: anchor.web3.Pu
     program.programId
   );
 
+  const tweet = await program.account.solanaTwitterTweet.fetch(tweetPda);
+
   return await program.methods.createLike().accounts({
+    authorWallet: tweet.author,
     authority: wallet.publicKey,
     like: likePDA,
     tweet: tweetPda,

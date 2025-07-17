@@ -22,4 +22,8 @@ pub mod social {
     pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
         instructions::create_like(ctx)
     }
+
+    pub fn create_token_mint_account(ctx: Context<CreateTokenMintAccount>) -> Result<()> {
+        instructions::create_token_mint_account(ctx)
+    }
 }
