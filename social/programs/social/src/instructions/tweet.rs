@@ -81,10 +81,13 @@ pub struct CreateLike<'info> {
       )]
     pub mint_account: Account<'info, Mint>,
 
+    // 创建作者创建一个ata账户
     #[account(
         init_if_needed,
         payer = authority,
+        // 接收哪个 mint 所发出来的 token
         associated_token::mint = mint_account,
+        // 谁拥有这个 ATA
         associated_token::authority = author_wallet,
     )]
     pub author_token_account: Account<'info, TokenAccount>,

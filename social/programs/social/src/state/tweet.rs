@@ -6,7 +6,7 @@ pub struct SolanaTwitterTweet {
     // 点赞数
     pub like_count: u64,
 
-    // 钱包地址
+    // 作者
     pub author: Pubkey,
 
     #[max_len(50)]
