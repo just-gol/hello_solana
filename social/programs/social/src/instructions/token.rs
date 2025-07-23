@@ -4,16 +4,16 @@ use anchor_spl::{metadata::{create_metadata_accounts_v3, mpl_token_metadata::typ
 pub fn create_token_mint_account(ctx: Context<CreateTokenMintAccount>) -> Result<()> {
   let signer_seeds: &[&[&[u8]]] = &[&[
       b"mint_v9",
-      &[ctx.bumps.mint_account]
+      &[ctx.bumps.token_mint_account]
     ]];
   create_metadata_accounts_v3(
     CpiContext::new_with_signer(
       ctx.accounts.token_metadata_program.to_account_info(),
       CreateMetadataAccountsV3 {
           metadata: ctx.accounts.metadata_account.to_account_info(),
-          mint: ctx.accounts.mint_account.to_account_info(),
-          mint_authority: ctx.accounts.mint_account.to_account_info(),
-          update_authority: ctx.accounts.mint_account.to_account_info(),
+          mint: ctx.accounts.token_mint_account.to_account_info(),
+          mint_authority: ctx.accounts.token_mint_account.to_account_info(),
+          update_authority: ctx.accounts.token_mint_account.to_account_info(),
           payer: ctx.accounts.authority.to_account_info(),
           system_program: ctx.accounts.system_program.to_account_info(),
           rent:ctx.accounts.rent.to_account_info(),
@@ -46,7 +46,7 @@ pub struct CreateTokenMintAccount<'info> {
     seeds=[
           b"metadata",
           token_metadata_program.key().as_ref(),
-          mint_account.key().as_ref(),
+          token_mint_account.key().as_ref(),
           ],
       bump,
       seeds::program = token_metadata_program.key(),
@@ -60,9 +60,9 @@ pub struct CreateTokenMintAccount<'info> {
       seeds=[b"mint_v9"],
       bump,
       mint::decimals = 2,
-      mint::authority = mint_account.key(),
+      mint::authority = token_mint_account.key(),
     )]
-    pub mint_account: Account<'info, Mint>,
+    pub token_mint_account: Account<'info, Mint>, // pda账户
 
     #[account(mut)]
     pub authority: Signer<'info>,
