@@ -19,19 +19,14 @@ pub mod social {
         instructions::create_tweet(ctx, body)
     }
 
-    // 创建评论
-    pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
-        instructions::create_like(ctx)
-    }
-
     // 创建token mint账户
     pub fn create_token_mint_account(ctx: Context<CreateTokenMintAccount>) -> Result<()> {
         instructions::create_token_mint_account(ctx)
     }
 
-    // 质押
-    pub fn nft_stale(ctx: Context<NftStake>) -> Result<()> {
-        instructions::nft_stake::stake(ctx)
+    // 点赞
+    pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
+        instructions::create_like(ctx)
     }
 
     // nft mint
