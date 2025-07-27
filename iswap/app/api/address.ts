@@ -1,6 +1,7 @@
 
 import * as anchor from "@coral-xyz/anchor";
 import { program } from "./const";
+import { PublicKey } from "@solana/web3.js";
 
 export function deriveEtfTokenMintAccount(symbol: string) {
   return anchor.web3.PublicKey.findProgramAddressSync(
@@ -10,11 +11,16 @@ export function deriveEtfTokenMintAccount(symbol: string) {
 
 }
 
-export function deriveEtfInfoAccount(symbol: string) {
-  const [mintAccount,] = deriveEtfTokenMintAccount(symbol);
+export function deriveEtfInfoAccount(seeds: string | PublicKey) {
+  let mintAccount: PublicKey;
+  if (typeof seeds === "string") {
+    [mintAccount,] = deriveEtfTokenMintAccount(seeds);
+  } else {
+    mintAccount = seeds;
+  }
 
   return anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("ETF_info_v3"), mintAccount.toBuffer()],
+    [Buffer.from("ETF_token_v3"), mintAccount.toBuffer()],
     program.programId
   );
 

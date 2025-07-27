@@ -26,3 +26,9 @@ pub struct EftAsset {
     // 权重
     pub weight: u16,
 }
+
+#[error_code]
+pub enum TokenMintError {
+    #[msg("Lack of necessary accounts")]
+    InvalidAccounts,
+}

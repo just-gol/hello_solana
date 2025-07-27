@@ -6,6 +6,8 @@ use crate::states::{EftAsset, EtfToken};
 pub fn eft_token_create(ctx: Context<EtfTokenCreate>, args: EtfTokenArgs) -> Result<()> {
   msg!("ETF Token Mint Address: {}", ctx.accounts.etf_token_mint_account.key());
   msg!("Metadata Address: {}", ctx.accounts.metadata_account.key());
+  msg!("Rust 端接收到的 symbol: {}", args.symbol);
+  msg!("ETF Info PDA: {}", ctx.accounts.etf_token_info.key());
 
   let m =  ctx.accounts.etf_token_mint_account.key();
   let signer_seeds: &[&[&[u8]]] = &[&[EtfToken::SEED_PREFIX.as_bytes(), m.as_ref(),&[ctx.bumps.etf_token_info]]];
@@ -78,6 +80,7 @@ pub struct EtfTokenCreate<'info> {
   )]
   pub etf_token_info:Account<'info,EtfToken>,
 
+  /// CHECK
   #[account(
     mut,
     seeds = [
@@ -87,7 +90,6 @@ pub struct EtfTokenCreate<'info> {
       bump,
       seeds::program = token_metadata_program.key(),
   )]
-  /// CHECK
     pub metadata_account:UncheckedAccount<'info>,
 
     #[account(mut)]
