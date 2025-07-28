@@ -4,6 +4,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, TokenAccountNotFoundError } from "@solana/spl-token";
 import { deriveEtfInfoAccount } from "./address";
+import { BN } from "bn.js";
 
 export async function createETF(
   wallet: anchor.Wallet,
@@ -105,4 +106,34 @@ export async function tokenMint(
   } catch (e) {
     console.error("❌ etfInfo 获取失败", e);
   }
+}
+
+export async function tokenBurn(
+  wallet: anchor.Wallet,
+  etfAddress: PublicKey, // token mint address pda
+  lamports: number) {
+  // 通过 etfAddress 获取 etfTokenInfoAddress
+  const [etfTokenInfoAccount] = deriveEtfInfoAccount(etfAddress);
+  // 获取资产
+  const etfInfo = await program.account.etfToken.fetch(etfTokenInfoAccount);
+
+  // 获取ata
+  const accounts = etfInfo.assets.flatMap((item) => {
+    return [
+      // 用户钱包ata
+      getAssociatedTokenAddressSync(item.token, wallet.publicKey), // 用户的ata
+      // 合约的ata
+      getAssociatedTokenAddressSync(item.token, etfTokenInfoAccount, true) // 合约的ata
+    ]
+  });
+
+  return await program.methods.etfBurn(new anchor.BN(lamports)).accounts({ etfTokenMintAccount: etfAddress, })
+    .remainingAccounts(accounts.map(item => (
+      {
+        pubkey: item,
+        isSigner: false,
+        isWritable: true,
+      }
+    ))).signers([wallet.payer])
+    .rpc();
 }

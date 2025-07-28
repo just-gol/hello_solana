@@ -18,4 +18,11 @@ pub mod iswap {
     ) -> Result<()> {
         instructions::etf_token_mint(ctx, lamports)
     }
+
+    pub fn etf_burn<'info>(
+        ctx: Context<'_, '_, '_, 'info, EtfTokenTransaction<'info>>,
+        lamports: u64,
+    ) -> Result<()> {
+        instructions::etf_token_burn(ctx, lamports)
+    }
 }
