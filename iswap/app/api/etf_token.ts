@@ -2,9 +2,11 @@ import { program, provider } from "./const";
 import * as anchor from "@coral-xyz/anchor";
 
 import { PublicKey } from "@solana/web3.js";
-import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, TokenAccountNotFoundError } from "@solana/spl-token";
+import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, getMint, TokenAccountNotFoundError } from "@solana/spl-token";
 import { deriveEtfInfoAccount } from "./address";
-import { BN } from "bn.js";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { mplTokenMetadata, fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { fromWeb3JsPublicKey } from "@metaplex-foundation/umi-web3js-adapters";
 
 export async function createETF(
   wallet: anchor.Wallet,
@@ -80,6 +82,7 @@ export async function tokenMint(
         // 用户钱包ata
         getAssociatedTokenAddressSync(item.token, wallet.publicKey), // 用户的ata
         // 合约的ata
+        // etfTokenInfoAddress 持有的 item.token 的 ATA 地址
         getAssociatedTokenAddressSync(item.token, etfTokenInfoAddress, true) // 合约的ata
       ]
     })
@@ -136,4 +139,62 @@ export async function tokenBurn(
       }
     ))).signers([wallet.payer])
     .rpc();
+}
+
+// 查询资产信息
+export async function etfList() {
+  const etfInfo = await program.account.etfToken.all();
+  return etfInfo;
+}
+
+// 查询资产详情
+export async function etfDetail(
+  wallet: anchor.Wallet,
+  etfAddress: PublicKey) {
+  // 通过 etfAddress 获取 etfTokenInfoAddress
+  const [etfTokenInfoAccount] = deriveEtfInfoAccount(etfAddress);
+  // 获取资产
+  const etfInfo = await program.account.etfToken.fetch(etfTokenInfoAccount);
+  // 获取mint account 信息
+  // const mintAccount = getMint(provider.connection, etfAddress);
+  // 安装 pnpm install @metaplex-foundation/umi-bundle-defaults
+  // 获取metadata信息
+  const umi = createUmi(provider.connection.rpcEndpoint);
+  // pnpm install @metaplex-foundation/umi
+  umi.use(mplTokenMetadata());
+  //  pnpm install @metaplex-foundation/mpl-token-metadata
+  // pnpm install @metaplex-foundation/umi-web3js-adapters
+  const mintAccount = await fetchDigitalAsset(umi, fromWeb3JsPublicKey(etfAddress));
+  let logo = ""
+  if (mintAccount.metadata.uri) {
+    const response = await fetch(mintAccount.metadata.uri);
+    const rj = await response.json() as { image?: string };
+    logo = rj.image
+  }
+  return {
+    public_key: etfAddress.toString(),
+    supply: mintAccount.mint.supply,
+    decimals: mintAccount.mint.decimals,
+    name: mintAccount.metadata.name,
+    symbol: mintAccount.metadata.symbol,
+    description: etfInfo.descriptor,
+    creator: etfInfo.creator.toString(),
+    create_at: etfInfo.createAt.toNumber(),
+    logo: logo,
+  }
+}
+
+export async function etfBalance(
+  wallet: anchor.Wallet,
+  etfAddress: PublicKey) {
+  // 获取用户的 ata 地址
+  const ata = getAssociatedTokenAddressSync(etfAddress, wallet.publicKey);
+  try {
+    // 获取用户的 ata 信息
+    const account = await getAccount(provider.connection, ata);
+    return account.amount;
+  } catch (e) {
+    console.error("❌ 获取用户的 ata 信息失败", e);
+    return 0;
+  }
 }
