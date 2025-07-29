@@ -38,6 +38,7 @@ export async function createETF(
       // token 的 account 不存在，则创建一个
       if (e instanceof TokenAccountNotFoundError) {
         tx.add(
+          // createETF 是初始化 ETF 的流程，确保链上所有相关账户完整。所以优先这里创建
           createAssociatedTokenAccountInstruction(
             wallet.payer.publicKey,
             address,
@@ -71,7 +72,7 @@ export async function createETF(
 
 export async function tokenMint(
   wallet: anchor.Wallet,
-  etfAddress: PublicKey, // 购买的etf地址
+  etfAddress: PublicKey, // 购买的etf地址  shuhui
   lamports: number) { // 购买ETF数量
   const [etfTokenInfoAddress,] = deriveEtfInfoAccount(etfAddress);
   console.log(`etfTokenInfoAddress: ${etfTokenInfoAddress.toBase58()}`);
