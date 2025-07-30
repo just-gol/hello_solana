@@ -1,0 +1,35 @@
+use anchor_lang::prelude::*;
+
+declare_id!("2xq6sRfewEU6NAAS9hTbx5Th5e4yDoTiFTjAtdETzZA4");
+pub mod instructions;
+pub mod states;
+use instructions::*;
+use states::*;
+
+#[program]
+pub mod sol_ji {
+
+    use super::*;
+    // 初始化
+    pub fn initialize(ctx: Context<InitializeIncense>) -> Result<()> {
+        instructions::initialize(ctx)
+    }
+
+    // 管理员修改规则
+    pub fn update_incense(
+        ctx: Context<UpdateIncense>,
+        a: IncenseType,
+        b: IncenseRule,
+    ) -> Result<()> {
+        instructions::update_incense(ctx, a, b)
+    }
+
+    pub fn nft_mint(ctx: Context<CreateBurnToken>, args: BurnTokenInfoArgs) -> Result<()> {
+        instructions::nft_mint(ctx, args)
+    }
+
+    // 烧香
+    pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
+        instructions::burn(ctx, a)
+    }
+}
