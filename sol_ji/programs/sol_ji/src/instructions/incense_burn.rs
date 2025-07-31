@@ -4,11 +4,11 @@ use anchor_lang::{
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount, Transfer},
+    token::{burn, Burn, Mint, Token, TokenAccount, Transfer},
 };
 
 use crate::states::{IncenseRulesConfig, IncenseType, UserBurnInfo};
-pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
+pub fn incense_burn(ctx: Context<CreateIncense>, a: IncenseType) -> Result<()> {
     let user_burn_info = &mut ctx.accounts.user_burn_info;
     // 当前 UTC 时间 -> DateTime
     let now_ts = Clock::get()?.unix_timestamp;
@@ -58,6 +58,25 @@ pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
     Ok(())
 }
 
+pub fn destroy(ctx: Context<Destroy>) -> Result<()> {
+    let m = ctx.accounts.nft_mint_account.key();
+    let signer_seeds: &[&[&[u8]]] =
+        &[&[b"user_burn_info", m.as_ref(), &[ctx.bumps.user_burn_info]]];
+    burn(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Burn {
+                mint: ctx.accounts.nft_mint_account.to_account_info(),
+                from: ctx.accounts.user_receive_nft_ata.to_account_info(),
+                authority: ctx.accounts.user_burn_info.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        1,
+    )?;
+    Ok(())
+}
+
 // 提取的检查函数
 pub fn check_daily_reset_and_limit(
     user_burn_info: &mut Account<UserBurnInfo>,
@@ -84,7 +103,7 @@ pub fn check_daily_reset_and_limit(
 }
 
 #[derive(Accounts)]
-pub struct Burn<'info> {
+pub struct CreateIncense<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -128,6 +147,38 @@ pub struct Burn<'info> {
     #[account(
         init_if_needed,
         payer = authority,
+        associated_token::mint = nft_mint_account,
+        associated_token::authority = user_burn_info,
+      )]
+    pub user_receive_nft_ata: Account<'info, TokenAccount>,
+
+    pub system_program: Program<'info, System>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
+    pub token_program: Program<'info, Token>,
+
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct Destroy<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(mut)]
+    pub nft_mint_account: Account<'info, Mint>,
+
+    #[account(
+      mut,
+      seeds = [b"user_burn_info", nft_mint_account.key().as_ref()],
+      bump
+    )]
+    pub user_burn_info: Account<'info, UserBurnInfo>,
+
+    // 接收nft账户
+    #[account(
+        mut,
         associated_token::mint = nft_mint_account,
         associated_token::authority = user_burn_info,
       )]

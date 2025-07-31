@@ -29,7 +29,11 @@ pub mod sol_ji {
     }
 
     // 烧香
-    pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
-        instructions::burn(ctx, a)
+    pub fn incense_burn(ctx: Context<CreateIncense>, a: IncenseType) -> Result<()> {
+        instructions::incense_burn(ctx, a)
+    }
+
+    pub fn destroy(ctx: Context<Destroy>) -> Result<()> {
+        instructions::destroy(ctx)
     }
 }
