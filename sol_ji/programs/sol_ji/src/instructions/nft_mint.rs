@@ -73,8 +73,8 @@ pub struct CreateBurnToken<'info> {
        payer = authority, 
        seeds = [b"create_burn_token",args.name.as_bytes()],
        mint::decimals = 0,
-       mint::authority = nft_mint_account.key(),
-       mint::freeze_authority = nft_mint_account.key(),
+       mint::authority = nft_mint_account,
+       mint::freeze_authority = nft_mint_account,
        bump,
       )]
     pub nft_mint_account: Account<'info, Mint>,

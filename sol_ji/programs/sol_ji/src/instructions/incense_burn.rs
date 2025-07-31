@@ -1,4 +1,11 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction::transfer},
+};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount, Transfer},
+};
 
 use crate::states::{IncenseRulesConfig, IncenseType, UserBurnInfo};
 pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
@@ -8,10 +15,45 @@ pub fn burn(ctx: Context<Burn>, a: IncenseType) -> Result<()> {
 
     check_daily_reset_and_limit(user_burn_info, now_ts, a)?;
 
-    // 转账
-
     // 获取香的规则
     let incense_rules_config = &mut ctx.accounts.incense_rules_config;
+
+    // 转账
+    let amount = incense_rules_config.get_rule(a).incense_price;
+    let tx = transfer(
+        &ctx.accounts.authority.key(),
+        &ctx.accounts.treasury.key(),
+        amount,
+    );
+
+    invoke(
+        &tx,
+        &[
+            ctx.accounts.authority.to_account_info(),
+            ctx.accounts.treasury.to_account_info(),
+        ],
+    )?;
+
+    msg!("Transfer success");
+
+    // 转移nft
+    anchor_spl::token::transfer(
+        CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.nft_associated_token_account.to_account_info(),
+                to: ctx.accounts.user_receive_nft_ata.to_account_info(),
+                authority: ctx.accounts.authority.to_account_info(),
+            },
+        ),
+        1,
+    )?;
+
+    msg!(
+        "transfer nft success,to ata:{}",
+        ctx.accounts.user_receive_nft_ata.key()
+    );
+
     user_burn_info.update_user_burn_info(ctx.accounts.authority.key(), a, incense_rules_config);
     Ok(())
 }
@@ -61,18 +103,43 @@ pub struct Burn<'info> {
       seeds = [b"treasury_incense_burn"],
       bump
     )]
-    pub treasury: UncheckedAccount<'info>,
+    pub treasury: UncheckedAccount<'info>, // 接收SOL
+
+    #[account(
+        mut,
+        associated_token::mint = nft_mint_account,
+        associated_token::authority = authority,
+      )]
+    pub nft_associated_token_account: Account<'info, TokenAccount>, // 转移NFT的账户
+
+    #[account(mut)]
+    pub nft_mint_account: Account<'info, Mint>,
 
     #[account(
       init_if_needed,
       payer = authority,
       space = 8 + UserBurnInfo::INIT_SPACE,
-      seeds = [b"user_burn_info", authority.key().as_ref()],
+      seeds = [b"user_burn_info", nft_mint_account.key().as_ref()],
       bump
     )]
     pub user_burn_info: Account<'info, UserBurnInfo>,
 
+    // 接收nft账户
+    #[account(
+        init_if_needed,
+        payer = authority,
+        associated_token::mint = nft_mint_account,
+        associated_token::authority = user_burn_info,
+      )]
+    pub user_receive_nft_ata: Account<'info, TokenAccount>,
+
     pub system_program: Program<'info, System>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
+    pub token_program: Program<'info, Token>,
+
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[error_code]

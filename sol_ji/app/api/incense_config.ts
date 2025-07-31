@@ -19,7 +19,7 @@ export async function updateIncense() {
     .updateIncense(
       { faintScent: {} }, // 枚举
       {
-        incensePrice: new anchor.BN(2000000),
+        incensePrice: new anchor.BN(2000000000),
         meritValue: new anchor.BN(20),
         incenseValue: new anchor.BN(200),
       }

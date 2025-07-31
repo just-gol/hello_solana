@@ -6,10 +6,10 @@ pub fn initialize(ctx: Context<InitializeIncense>) -> Result<()> {
     incense_rules_config.set_inner(IncenseRulesConfig::new(
         ctx.accounts.authority.key(),
         [
-            IncenseRule::new(10_000_000, 10, 100),
-            IncenseRule::new(50000000, 65, 600),
-            IncenseRule::new(100000000, 1200, 3100),
-            IncenseRule::new(300000000, 3400, 9000),
+            IncenseRule::new(100_000_000, 10, 100),
+            IncenseRule::new(500_000_000, 65, 600),
+            IncenseRule::new(200_000_000, 1200, 3100),
+            IncenseRule::new(300_000_000, 3400, 9000),
         ],
     ));
     msg!("initialize successfully");
