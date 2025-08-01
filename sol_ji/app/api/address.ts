@@ -14,12 +14,37 @@ export function getNftMintAccount(name: string) {
 }
 
 // 
-export function getUserBurnInfo(seeds: string | PublicKey) {
-  let nftMintAccount: PublicKey
-  if (typeof seeds === "string") {
-    nftMintAccount = getNftMintAccount(seeds)
-  } else {
-    nftMintAccount = seeds
-  }
-  return anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("user_burn_info"), nftMintAccount.toBuffer()], program.programId);
+export function getUserBurnInfo(wallet: anchor.Wallet) {
+  // let nftMintAccount: PublicKey
+  // if (typeof seeds === "string") {
+  //   nftMintAccount = getNftMintAccount(seeds)
+  // } else {
+  //   nftMintAccount = seeds
+  // }
+  // return anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("user_burn_info"), nftMintAccount.toBuffer()], program.programId);
+  return anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("user_burn_info"), wallet.publicKey.toBuffer()], program.programId);
+}
+
+// 签文的pda
+export function getLotteryArrayPda() {
+  return anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("lottery_array")], program.programId);
+}
+
+// 抽签次数 pda
+export function getLotteryCountPda(wallet: anchor.Wallet) {
+  let [pda] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("lottery_count"), wallet.publicKey.toBuffer()], program.programId);
+  return pda;
+}
+
+export function getLotteryRecordPda(count: number, wallet: anchor.Wallet) {
+  const countBuffer = Buffer.from([count]);  // 只需要一个字节
+  let [pda] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("lottery_record"),
+      wallet.publicKey.toBuffer(),
+      countBuffer
+    ],
+    program.programId
+  );
+  return pda;
 }

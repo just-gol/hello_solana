@@ -59,7 +59,7 @@ pub fn incense_burn(ctx: Context<CreateIncense>, a: IncenseType) -> Result<()> {
 }
 
 pub fn destroy(ctx: Context<Destroy>) -> Result<()> {
-    let m = ctx.accounts.nft_mint_account.key();
+    let m = ctx.accounts.authority.key();
     let signer_seeds: &[&[&[u8]]] =
         &[&[b"user_burn_info", m.as_ref(), &[ctx.bumps.user_burn_info]]];
     burn(
@@ -138,7 +138,7 @@ pub struct CreateIncense<'info> {
       init_if_needed,
       payer = authority,
       space = 8 + UserBurnInfo::INIT_SPACE,
-      seeds = [b"user_burn_info", nft_mint_account.key().as_ref()],
+      seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
     pub user_burn_info: Account<'info, UserBurnInfo>,
@@ -171,7 +171,7 @@ pub struct Destroy<'info> {
 
     #[account(
       mut,
-      seeds = [b"user_burn_info", nft_mint_account.key().as_ref()],
+      seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
     pub user_burn_info: Account<'info, UserBurnInfo>,

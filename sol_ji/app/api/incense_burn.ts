@@ -4,7 +4,7 @@ import { getUserBurnInfo, getNftMintAccount } from "./address";
 
 export async function incenseBurn(wallet: anchor.Wallet, name: string) {
   return await program.methods.incenseBurn(
-    { faintScent: {} },
+    { orangeFragrance: {} },
   )
     .accounts({
       authority: wallet.payer.publicKey,
@@ -17,8 +17,8 @@ export async function incenseBurn(wallet: anchor.Wallet, name: string) {
   // return [result, fetch];
 }
 
-export async function getInfo(name: string) {
-  const [pda] = getUserBurnInfo(name);
+export async function getInfo(wallet: anchor.Wallet) {
+  const [pda] = getUserBurnInfo(wallet);
   return await program.account.userBurnInfo.fetch(pda);
 }
 

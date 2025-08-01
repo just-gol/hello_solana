@@ -6,3 +6,6 @@ pub use incense_burn::*;
 
 pub mod nft_mint;
 pub use nft_mint::*;
+
+pub mod draw_lots;
+pub use draw_lots::*;

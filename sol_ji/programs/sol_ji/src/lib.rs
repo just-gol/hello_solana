@@ -33,7 +33,18 @@ pub mod sol_ji {
         instructions::incense_burn(ctx, a)
     }
 
+    // 销毁nft
     pub fn destroy(ctx: Context<Destroy>) -> Result<()> {
         instructions::destroy(ctx)
+    }
+
+    // 初始化签文
+    pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Result<()> {
+        instructions::initialize_lottery_poetry(ctx)
+    }
+
+    // 抽签
+    pub fn draw_lots(ctx: Context<DrawLots>, count: u8, value: u64) -> Result<()> {
+        instructions::draw_lots(ctx, count, value)
     }
 }

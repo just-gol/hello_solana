@@ -37,6 +37,10 @@ impl UserBurnInfo {
         self.last_update_time = Clock::get().unwrap().unix_timestamp;
         self.is_reset = false;
     }
+
+    pub fn deduction(&mut self, value: u64) {
+        self.merit_value -= value;
+    }
 }
 
 pub struct IncenseWallet {}
