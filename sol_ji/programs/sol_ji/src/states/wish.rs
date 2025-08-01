@@ -1,0 +1,80 @@
+use anchor_lang::prelude::*;
+
+#[account]
+#[derive(InitSpace)]
+pub struct WishUser {
+    // 许愿次数
+    pub total_count: u8,
+    // 许愿时间
+    pub update_time: i64,
+    // 是否免费
+    pub daily_count: u8,
+}
+
+impl WishUser {
+    pub fn new() -> Self {
+        Self {
+            total_count: 0,
+            update_time: Clock::get().unwrap().unix_timestamp,
+            daily_count: 0,
+        }
+    }
+
+    pub fn update_user_wish_count(&mut self) {
+        self.total_count += 1;
+        self.daily_count += 1;
+        self.update_time = Clock::get().unwrap().unix_timestamp;
+    }
+
+    pub fn check_is_free(&mut self) {
+        let last_day = (self.update_time + 8 * 3600) / 86400;
+        let now_ts = Clock::get().unwrap().unix_timestamp;
+        let current_day = (now_ts + 8 * 3600) / 86400;
+        // 处理每日重置逻辑
+        if current_day > last_day {
+            self.daily_count = 0;
+        }
+    }
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct PublishWish {
+    #[max_len(100)]
+    pub content: String,
+    // 作者
+    pub author: Pubkey,
+    // 创建时间
+    pub create_time: i64,
+    // 点赞
+    pub like_count: u64,
+}
+
+impl PublishWish {
+    pub fn new(author: Pubkey, content: String) -> Self {
+        Self {
+            content,
+            author,
+            create_time: Clock::get().unwrap().unix_timestamp,
+            like_count: 0,
+        }
+    }
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct WishLike {
+    // 点赞的人
+    pub like_pubkey: Pubkey,
+    // 点赞的愿望
+    pub with_pubkey: Pubkey,
+}
+
+impl WishLike {
+    pub fn new(like_pubkey: Pubkey, with_pubkey: Pubkey) -> Self {
+        Self {
+            like_pubkey,
+            with_pubkey,
+        }
+    }
+}

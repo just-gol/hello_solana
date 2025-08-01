@@ -9,6 +9,7 @@ pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Resul
     Ok(())
 }
 
+// value是扣除功德值
 pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     msg!("当前链上时间戳: {}", now_ts);
@@ -121,6 +122,7 @@ pub struct DrawLots<'info> {
     )]
     pub lottery_count: Account<'info, LotteryCount>,
 
+    // 功德值->在这个账户中
     #[account(
       mut,
       seeds = [b"user_burn_info",authority.key().as_ref()],
@@ -136,6 +138,6 @@ pub struct DrawLots<'info> {
 
 #[error_code]
 pub enum DrawLotsCode {
-    #[msg("Insufficient merit value")]
+    #[msg("insufficient merit value")]
     Insufficient,
 }
