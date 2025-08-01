@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use borsh::{BorshDeserialize, BorshSerialize};
-
 // 定义香的结构体
 #[account]
 #[derive(InitSpace, Copy)]

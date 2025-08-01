@@ -37,12 +37,11 @@ export function getLotteryCountPda(wallet: anchor.Wallet) {
 }
 
 export function getLotteryRecordPda(count: number, wallet: anchor.Wallet) {
-  const countBuffer = Buffer.from([count]);  // 只需要一个字节
   let [pda] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("lottery_record"),
       wallet.publicKey.toBuffer(),
-      countBuffer
+      Buffer.from(`${count + 1}`),
     ],
     program.programId
   );

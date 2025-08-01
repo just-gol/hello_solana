@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
 
 declare_id!("2xq6sRfewEU6NAAS9hTbx5Th5e4yDoTiFTjAtdETzZA4");
@@ -44,7 +45,7 @@ pub mod sol_ji {
     }
 
     // 抽签
-    pub fn draw_lots(ctx: Context<DrawLots>, count: u8, value: u64) -> Result<()> {
-        instructions::draw_lots(ctx, count, value)
+    pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
+        instructions::draw_lots(ctx, value)
     }
 }

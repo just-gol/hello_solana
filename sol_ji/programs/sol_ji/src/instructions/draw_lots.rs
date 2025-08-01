@@ -9,7 +9,7 @@ pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Resul
     Ok(())
 }
 
-pub fn draw_lots(ctx: Context<DrawLots>, _count: u8, value: u64) -> Result<()> {
+pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     msg!("当前链上时间戳: {}", now_ts);
 
@@ -79,11 +79,19 @@ pub struct InitializeLotteryPoetry<'info> {
     )]
     pub lottery_array: Account<'info, LotteryConfig>,
 
+    #[account(
+      init,
+      payer = authority,
+      space = 8 + LotteryCount::INIT_SPACE,
+      seeds = [b"lottery_count",authority.key().as_ref()],
+      bump
+    )]
+    pub lottery_count: Account<'info, LotteryCount>,
+
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-#[instruction(count: u8)]
 pub struct DrawLots<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -97,19 +105,17 @@ pub struct DrawLots<'info> {
 
     // 存储每次抽签结果
     #[account(
-      init_if_needed,
+      init,
       payer = authority,
       space = 8 + LotteryRecord::INIT_SPACE,
-      seeds = [b"lottery_record",authority.key().as_ref(),&[count]], // ← 这里只是单字节引用
+      seeds = [b"lottery_record",authority.key().as_ref(),(lottery_count.count+1).to_string().as_bytes()], 
       bump
     )]
     pub lottery_record: Account<'info, LotteryRecord>,
 
     // 记录抽签次数
     #[account(
-      init_if_needed,
-      payer = authority,
-      space = 8 + LotteryCount::INIT_SPACE,
+      mut,
       seeds = [b"lottery_count",authority.key().as_ref()],
       bump
     )]
@@ -117,7 +123,7 @@ pub struct DrawLots<'info> {
 
     #[account(
       mut,
-      seeds = [b"user_burn_info", authority.key().as_ref()],
+      seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
     pub user_burn_info: Account<'info, UserBurnInfo>,

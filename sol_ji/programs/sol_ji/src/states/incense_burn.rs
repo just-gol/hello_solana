@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::states::{IncenseRule, IncenseRulesConfig, IncenseType};
+use crate::states::{IncenseRulesConfig, IncenseType};
 
 #[account]
 #[derive(InitSpace)]
