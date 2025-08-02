@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { program, provider } from "./wallet";
-import { getLotteryArrayPda, getNftMintAccount, getLotteryCountPda, getLotteryRecordPda } from "./address";
+import { getLotteryArrayPda, getNftMintAccount, getLotteryRecordPda, getUserBurnInfo } from "./address";
 
 export async function initializeLotteryPoetry() {
   await program.methods.initializeLotteryPoetry()
@@ -12,9 +12,9 @@ export async function initializeLotteryPoetry() {
 }
 
 export async function drawLots(name: string, wallet: anchor.Wallet) {
-  let r1 = await program.account.lotteryCount.fetch(getLotteryCountPda(wallet));
-  console.log("count===>", r1.count);
-  let pda = getLotteryRecordPda(r1.count, wallet);
+  let r1 = await program.account.userInfo.fetch(getUserBurnInfo(wallet));
+  console.log("lotteryCount===>", r1.lotteryCount);
+  let pda = getLotteryRecordPda(r1.lotteryCount, wallet);
   let r = await program.methods.drawLots(new anchor.BN(5))
     .accounts({
       nftMintAccount: getNftMintAccount(name),

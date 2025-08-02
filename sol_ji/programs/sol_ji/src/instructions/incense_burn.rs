@@ -7,9 +7,10 @@ use anchor_spl::{
     token::{burn, Burn, Mint, Token, TokenAccount, Transfer},
 };
 
-use crate::states::{IncenseRulesConfig, IncenseType, UserBurnInfo};
+use crate::states::{IncenseRulesConfig, IncenseType, UserInfo};
 pub fn incense_burn(ctx: Context<CreateIncense>, a: IncenseType) -> Result<()> {
     let user_burn_info = &mut ctx.accounts.user_burn_info;
+    msg!("user_burn_info:{}", user_burn_info.key());
     // 当前 UTC 时间 -> DateTime
     let now_ts = Clock::get()?.unix_timestamp;
 
@@ -79,7 +80,7 @@ pub fn destroy(ctx: Context<Destroy>) -> Result<()> {
 
 // 提取的检查函数
 pub fn check_daily_reset_and_limit(
-    user_burn_info: &mut Account<UserBurnInfo>,
+    user_burn_info: &mut Account<UserInfo>,
     now_ts: i64,
     incense_type: IncenseType,
 ) -> Result<()> {
@@ -137,11 +138,11 @@ pub struct CreateIncense<'info> {
     #[account(
       init_if_needed,
       payer = authority,
-      space = 8 + UserBurnInfo::INIT_SPACE,
+      space = 8 + UserInfo::INIT_SPACE,
       seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
-    pub user_burn_info: Account<'info, UserBurnInfo>,
+    pub user_burn_info: Account<'info, UserInfo>,
 
     // 接收nft账户
     #[account(
@@ -174,7 +175,7 @@ pub struct Destroy<'info> {
       seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
-    pub user_burn_info: Account<'info, UserBurnInfo>,
+    pub user_burn_info: Account<'info, UserInfo>,
 
     // 接收nft账户
     #[account(

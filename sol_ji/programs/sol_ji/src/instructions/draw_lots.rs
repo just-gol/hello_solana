@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
-use crate::states::{LotteryConfig, LotteryCount, LotteryRecord, UserBurnInfo};
+use crate::states::{LotteryConfig, LotteryRecord, UserInfo};
 pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Result<()> {
     let config = LotteryConfig::new();
     ctx.accounts.lottery_array.set_inner(config);
@@ -20,13 +20,12 @@ pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     msg!("随机数: {},抽签结果:{:?}", random, lottery_type);
 
     // 判断是否第一次抽签
-    let lottery_count = &mut ctx.accounts.lottery_count;
+    let user_burn_info = &mut ctx.accounts.user_burn_info;
 
-    check_is_free(lottery_count, now_ts);
+    check_is_free(user_burn_info, now_ts);
 
     // 扣除功德值
-    if !lottery_count.is_free {
-        let user_burn_info = &mut ctx.accounts.user_burn_info;
+    if !user_burn_info.lottery_is_free {
         msg!("扣减钱功能的值: {}", user_burn_info.merit_value);
         if user_burn_info.merit_value < value {
             return Err(DrawLotsCode::Insufficient.into());
@@ -36,7 +35,11 @@ pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     }
 
     // 创建抽签记录
-    let merit_value = if lottery_count.is_free { 0 } else { value };
+    let merit_value = if user_burn_info.lottery_is_free {
+        0
+    } else {
+        value
+    };
     let lottery_record = LotteryRecord::new(
         ctx.accounts.authority.key(),
         lottery_type,
@@ -47,22 +50,22 @@ pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     ctx.accounts.lottery_record.set_inner(lottery_record);
 
     // 更新抽签次数
-    lottery_count.update_lottery_count(now_ts);
+    user_burn_info.update_lottery_count(now_ts);
 
     Ok(())
 }
 
-pub fn check_is_free(lottery_count: &mut LotteryCount, now_ts: i64) {
-    if lottery_count.lottery_time == 0 {
-        lottery_count.is_free = true;
+pub fn check_is_free(user_burn_info: &mut UserInfo, now_ts: i64) {
+    if user_burn_info.lottery_time == 0 {
+        user_burn_info.lottery_is_free = true;
         return;
     }
 
-    let last_day = (lottery_count.lottery_time + 8 * 3600) / 86400;
+    let last_day = (user_burn_info.lottery_time + 8 * 3600) / 86400;
     let current_day = (now_ts + 8 * 3600) / 86400;
 
     if current_day > last_day {
-        lottery_count.is_free = true; // 每天第一次默认免费
+        user_burn_info.lottery_is_free = true; // 每天第一次默认免费
     }
 }
 
@@ -79,15 +82,6 @@ pub struct InitializeLotteryPoetry<'info> {
         bump
     )]
     pub lottery_array: Account<'info, LotteryConfig>,
-
-    #[account(
-      init,
-      payer = authority,
-      space = 8 + LotteryCount::INIT_SPACE,
-      seeds = [b"lottery_count",authority.key().as_ref()],
-      bump
-    )]
-    pub lottery_count: Account<'info, LotteryCount>,
 
     pub system_program: Program<'info, System>,
 }
@@ -109,18 +103,10 @@ pub struct DrawLots<'info> {
       init,
       payer = authority,
       space = 8 + LotteryRecord::INIT_SPACE,
-      seeds = [b"lottery_record",authority.key().as_ref(),(lottery_count.count+1).to_string().as_bytes()], 
+      seeds = [b"lottery_record",authority.key().as_ref(),(user_burn_info.lottery_count+1).to_string().as_bytes()], 
       bump
     )]
     pub lottery_record: Account<'info, LotteryRecord>,
-
-    // 记录抽签次数
-    #[account(
-      mut,
-      seeds = [b"lottery_count",authority.key().as_ref()],
-      bump
-    )]
-    pub lottery_count: Account<'info, LotteryCount>,
 
     // 功德值->在这个账户中
     #[account(
@@ -128,7 +114,7 @@ pub struct DrawLots<'info> {
       seeds = [b"user_burn_info",authority.key().as_ref()],
       bump
     )]
-    pub user_burn_info: Account<'info, UserBurnInfo>,
+    pub user_burn_info: Account<'info, UserInfo>,
 
     #[account(mut)]
     pub nft_mint_account: Account<'info, Mint>,

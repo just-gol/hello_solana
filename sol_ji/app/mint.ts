@@ -17,12 +17,7 @@ import { getWallet } from "./api/wallet";
   console.log("Burn Result:", r4);
 
   const r5 = await getInfo(wallet);
-  console.log("User:", r5.user.toBase58());
-  console.log("Burn Counts:", r5.burnCount);
-  console.log("Merit Value:", r5.meritValue.toNumber());
-  console.log("Incense Value:", r5.incenseValue.toNumber());
-  console.log("Last Update Time:", new Date(r5.lastUpdateTime.toNumber() * 1000));
-  console.log("Is Reset:", r5.isReset);
+  console.log("User:", r5);
 
   const r6 = await destroy(wallet, "Test NFT 11");
   console.log("Destroy Result:", r6);

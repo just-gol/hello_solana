@@ -18,8 +18,22 @@ export async function incenseBurn(wallet: anchor.Wallet, name: string) {
 }
 
 export async function getInfo(wallet: anchor.Wallet) {
-  const [pda] = getUserBurnInfo(wallet);
-  return await program.account.userBurnInfo.fetch(pda);
+  const pda = getUserBurnInfo(wallet);
+  console.log("user info pda:", pda.toBase58());
+  let info = await program.account.userInfo.fetch(pda);
+  return {
+    user: info.user.toBase58(),
+    burnCount: info.burnCount,
+    meritValue: info.meritValue.toNumber(),
+    incenseValue: info.incenseValue.toNumber(),
+    lastUpdateTime: new Date(info.lastUpdateTime.toNumber() * 1000).toLocaleString(),
+    lotteryCount: info.lotteryCount,
+    lotteryIsFree: info.lotteryIsFree,
+    lotteryTime: new Date(info.lotteryTime.toNumber() * 1000).toLocaleString(),
+    wishTotalCount: info.wishTotalCount,
+    wishUpdateTime: new Date(info.wishUpdateTime.toNumber() * 1000).toLocaleString(),
+    wishDailyCount: info.wishDailyCount
+  };
 }
 
 export async function destroy(wallet: anchor.Wallet, name: string) {
