@@ -9,6 +9,12 @@ pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Resul
     Ok(())
 }
 
+pub fn initialize_draw_lots(ctx: Context<InitializeDrawLots>) -> Result<()> {
+    ctx.accounts.user_burn_info.init_lottery_count();
+    msg!("Initialization successful");
+    Ok(())
+}
+
 // value是扣除功德值
 pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
@@ -56,11 +62,6 @@ pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
 }
 
 pub fn check_is_free(user_burn_info: &mut UserInfo, now_ts: i64) {
-    if user_burn_info.lottery_time == 0 {
-        user_burn_info.lottery_is_free = true;
-        return;
-    }
-
     let last_day = (user_burn_info.lottery_time + 8 * 3600) / 86400;
     let current_day = (now_ts + 8 * 3600) / 86400;
 
@@ -82,6 +83,23 @@ pub struct InitializeLotteryPoetry<'info> {
         bump
     )]
     pub lottery_array: Account<'info, LotteryConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct InitializeDrawLots<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        init_if_needed,
+        payer = authority,
+        space = 8 + UserInfo::INIT_SPACE,
+        seeds = [b"user_burn_info",authority.key().as_ref()],
+        bump
+      )]
+    pub user_burn_info: Account<'info, UserInfo>,
 
     pub system_program: Program<'info, System>,
 }
@@ -115,9 +133,6 @@ pub struct DrawLots<'info> {
       bump
     )]
     pub user_burn_info: Account<'info, UserInfo>,
-
-    #[account(mut)]
-    pub nft_mint_account: Account<'info, Mint>,
 
     pub system_program: Program<'info, System>,
 }

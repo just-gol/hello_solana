@@ -44,6 +44,11 @@ pub mod sol_ji {
         instructions::initialize_lottery_poetry(ctx)
     }
 
+    // 初始化抽签
+    pub fn initialize_draw_lots(ctx: Context<InitializeDrawLots>) -> Result<()> {
+        instructions::initialize_draw_lots(ctx)
+    }
+
     // 抽签
     pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
         instructions::draw_lots(ctx, value)

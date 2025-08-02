@@ -11,13 +11,19 @@ export async function initializeLotteryPoetry() {
   return await program.account.lotteryConfig.fetch(pda);
 }
 
+export async function initializeDrawLots() {
+  return await program.methods.initializeDrawLots()
+    .accounts({
+    })
+    .rpc();
+}
+
 export async function drawLots(name: string, wallet: anchor.Wallet) {
   let r1 = await program.account.userInfo.fetch(getUserBurnInfo(wallet));
   console.log("lotteryCount===>", r1.lotteryCount);
   let pda = getLotteryRecordPda(r1.lotteryCount, wallet);
   let r = await program.methods.drawLots(new anchor.BN(5))
     .accounts({
-      nftMintAccount: getNftMintAccount(name),
       lotteryRecord: pda,
     })
     .rpc();

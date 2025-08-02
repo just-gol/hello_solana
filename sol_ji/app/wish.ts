@@ -25,7 +25,7 @@ import * as anchor from "@coral-xyz/anchor";
   // const r6 = await createWishUser();
   // console.log("Create Wish User Result:", r6);
 
-  const [createWishResult, publishWishPda] = await createWish("Test Wish 03", 5, false, wallet);
+  const [createWishResult, publishWishPda] = await createWish("Test Wish 04", 5, false, wallet);
   console.log("Create Wish Result:", createWishResult);
   console.log("Publish Wish PDA:", publishWishPda.toBase58());
 

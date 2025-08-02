@@ -51,7 +51,9 @@ pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
 #[derive(Accounts)]
 pub struct CreateWishUser<'info> {
     #[account(
-        mut,
+        init_if_needed,
+        payer = authority,
+        space = 8 + UserInfo::INIT_SPACE,
         seeds = [b"user_burn_info",authority.key().as_ref()],
         bump
       )]

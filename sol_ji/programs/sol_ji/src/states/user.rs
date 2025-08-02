@@ -31,6 +31,9 @@ pub struct UserInfo {
     pub wish_update_time: i64,
     // 今日免费次数
     pub wish_daily_count: u8,
+
+    // 创建时间
+    pub create_at: i64,
 }
 
 impl UserInfo {
@@ -44,12 +47,16 @@ impl UserInfo {
         incense_type: IncenseType,
         incense_rules_config: &IncenseRulesConfig,
     ) {
+        let now_ts = Clock::get().unwrap().unix_timestamp;
+        if self.create_at == 0 {
+            self.create_at = now_ts;
+        }
         let incense_rule = incense_rules_config.get_rule(incense_type);
         self.user = user;
         self.burn_count[incense_type as usize] += 1;
         self.merit_value += incense_rule.merit_value;
         self.incense_value += incense_rule.incense_value;
-        self.last_update_time = Clock::get().unwrap().unix_timestamp;
+        self.last_update_time = now_ts;
     }
 
     pub fn deduction(&mut self, value: u64) {
@@ -57,6 +64,16 @@ impl UserInfo {
     }
 
     // 抽签
+    pub fn init_lottery_count(&mut self) {
+        let now_ts = Clock::get().unwrap().unix_timestamp;
+        if self.create_at == 0 {
+            self.create_at = now_ts;
+            self.lottery_is_free = true;
+            self.lottery_time = now_ts;
+            self.lottery_count = 0;
+        }
+    }
+
     pub fn update_lottery_count(&mut self, now_ts: i64) {
         self.lottery_is_free = false;
         self.lottery_time = now_ts;
@@ -65,9 +82,13 @@ impl UserInfo {
 
     //===许愿
     pub fn init_update_wish(&mut self) {
-        self.wish_total_count = 0;
-        self.wish_update_time = Clock::get().unwrap().unix_timestamp;
-        self.wish_daily_count = 0;
+        let now_ts = Clock::get().unwrap().unix_timestamp;
+        if self.create_at == 0 {
+            self.create_at = now_ts;
+            self.wish_total_count = 0;
+            self.wish_update_time = now_ts;
+            self.wish_daily_count = 0;
+        }
     }
 
     pub fn update_user_wish_count(&mut self) {

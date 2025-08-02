@@ -32,7 +32,8 @@ export async function getInfo(wallet: anchor.Wallet) {
     lotteryTime: new Date(info.lotteryTime.toNumber() * 1000).toLocaleString(),
     wishTotalCount: info.wishTotalCount,
     wishUpdateTime: new Date(info.wishUpdateTime.toNumber() * 1000).toLocaleString(),
-    wishDailyCount: info.wishDailyCount
+    wishDailyCount: info.wishDailyCount,
+    createAt: new Date(info.createAt.toNumber() * 1000).toLocaleString(),
   };
 }
 
