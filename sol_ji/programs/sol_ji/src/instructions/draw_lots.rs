@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::Mint;
 
 use crate::states::{LotteryConfig, LotteryRecord, UserInfo};
 pub fn initialize_lottery_poetry(ctx: Context<InitializeLotteryPoetry>) -> Result<()> {
@@ -34,7 +33,7 @@ pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
     if !user_burn_info.lottery_is_free {
         msg!("扣减钱功能的值: {}", user_burn_info.merit_value);
         if user_burn_info.merit_value < value {
-            return Err(DrawLotsCode::Insufficient.into());
+            return err!(DrawLotsCode::Insufficient);
         }
         user_burn_info.merit_value -= value;
         msg!("剩余功德值: {}", user_burn_info.merit_value)

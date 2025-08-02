@@ -25,7 +25,7 @@ pub mod sol_ji {
         instructions::update_incense(ctx, a, b)
     }
 
-    pub fn nft_mint(ctx: Context<CreateBurnToken>, args: BurnTokenInfoArgs) -> Result<()> {
+    pub fn nft_mint(ctx: Context<CreateBurnToken>, args: NftInfoArgs) -> Result<()> {
         instructions::nft_mint(ctx, args)
     }
 
@@ -72,5 +72,10 @@ pub mod sol_ji {
     // 点赞
     pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
         instructions::create_like(ctx)
+    }
+
+    //
+    pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: NftInfoArgs) -> Result<()> {
+        instructions::mint_sbt_nft(ctx, args)
     }
 }

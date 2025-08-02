@@ -23,7 +23,7 @@ pub fn create_wish(
     // 扣除功德值
     if user_burn_info.wish_daily_count > 3 {
         if ctx.accounts.user_burn_info.merit_value < value {
-            return Err(WishCode::Insufficient.into());
+            return err!(WishCode::Insufficient);
         }
         ctx.accounts.user_burn_info.deduction(value);
     }

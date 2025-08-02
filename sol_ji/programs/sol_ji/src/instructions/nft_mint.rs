@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{associated_token::AssociatedToken, metadata::{create_master_edition_v3, create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMasterEditionV3, CreateMetadataAccountsV3, Metadata}, token::{freeze_account, mint_to, FreezeAccount, Mint, MintTo, Token, TokenAccount}};
 
-use crate::states::BurnTokenInfoArgs;
-pub fn nft_mint(ctx: Context<CreateBurnToken>, args: BurnTokenInfoArgs) -> Result<()> {
+use crate::states::{NftInfoArgs, SbtNftCount};
+pub fn nft_mint(ctx: Context<CreateBurnToken>, args: NftInfoArgs) -> Result<()> {
   let signer_seeds: &[&[&[u8]]] = &[&[
       b"create_burn_token",
       args.name.as_bytes(),
@@ -62,7 +62,7 @@ pub fn nft_mint(ctx: Context<CreateBurnToken>, args: BurnTokenInfoArgs) -> Resul
 }
 
 #[derive(Accounts)]
-#[instruction(args: BurnTokenInfoArgs)]
+#[instruction(args: NftInfoArgs)]
 pub struct CreateBurnToken<'info> {
 
     #[account(mut)]
@@ -115,11 +115,14 @@ pub struct CreateBurnToken<'info> {
 }
 
 
-pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result<()> {
+pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: NftInfoArgs) -> Result<()> {
+  if ctx.accounts.sbt_nft_count.count > 10000 {
+    return err!(NftErrorCode::NftCountOver);
+  }
   let signer_seeds: &[&[&[u8]]] = &[&[
       b"create_sbt_token",
       args.name.as_bytes(),
-      &[ctx.bumps.nft_mint_account],
+      &[ctx.bumps.sbt_nft_mint_account],
   ]];
 
   create_metadata_accounts_v3(
@@ -127,10 +130,10 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
           ctx.accounts.token_metadata_program.to_account_info(),
           CreateMetadataAccountsV3 {
               metadata: ctx.accounts.metadata_account.to_account_info(),
-              mint: ctx.accounts.nft_mint_account.to_account_info(),
-              mint_authority: ctx.accounts.nft_mint_account.to_account_info(),
+              mint: ctx.accounts.sbt_nft_mint_account.to_account_info(),
+              mint_authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
               payer: ctx.accounts.authority.to_account_info(),
-              update_authority: ctx.accounts.nft_mint_account.to_account_info(),
+              update_authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
               system_program: ctx.accounts.system_program.to_account_info(),
               rent: ctx.accounts.rent.to_account_info(),
           },
@@ -155,9 +158,9 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
       CpiContext::new_with_signer(
           ctx.accounts.token_program.to_account_info(),
           MintTo {
-              mint: ctx.accounts.nft_mint_account.to_account_info(),
+              mint: ctx.accounts.sbt_nft_mint_account.to_account_info(),
               to: ctx.accounts.sbt_nft_associated_token_account.to_account_info(),
-              authority: ctx.accounts.nft_mint_account.to_account_info(),
+              authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
           },
           signer_seeds,
       ),
@@ -169,8 +172,8 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
         ctx.accounts.token_program.to_account_info(),
         FreezeAccount {
             account: ctx.accounts.sbt_nft_associated_token_account.to_account_info(),
-            mint: ctx.accounts.nft_mint_account.to_account_info(),
-            authority: ctx.accounts.nft_mint_account.to_account_info(),
+            mint: ctx.accounts.sbt_nft_mint_account.to_account_info(),
+            authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
         },
         signer_seeds,
     ),
@@ -181,9 +184,9 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
           ctx.accounts.token_metadata_program.to_account_info(),
           CreateMasterEditionV3 {
               edition: ctx.accounts.master_editon_account.to_account_info(),
-              mint: ctx.accounts.nft_mint_account.to_account_info(),
-              update_authority: ctx.accounts.nft_mint_account.to_account_info(),
-              mint_authority: ctx.accounts.nft_mint_account.to_account_info(),
+              mint: ctx.accounts.sbt_nft_mint_account.to_account_info(),
+              update_authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
+              mint_authority: ctx.accounts.sbt_nft_mint_account.to_account_info(),
               payer: ctx.accounts.authority.to_account_info(),
               metadata: ctx.accounts.metadata_account.to_account_info(),
               token_program: ctx.accounts.token_program.to_account_info(),
@@ -194,8 +197,10 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
       ),
       Some(1),
   )?;
+  msg!("SBT mint success ata: {}", ctx.accounts.sbt_nft_associated_token_account.key());
 
-  msg!("✅ SBT mint success ata: {}", ctx.accounts.sbt_nft_associated_token_account.key());
+  ctx.accounts.sbt_nft_count.increment();
+
   Ok(())
 }
 
@@ -203,7 +208,7 @@ pub fn mint_sbt_nft(ctx: Context<MintSbtNft>, args: BurnTokenInfoArgs) -> Result
 
 
 #[derive(Accounts)]
-#[instruction(args: BurnTokenInfoArgs)]
+#[instruction(args: NftInfoArgs)]
 pub struct MintSbtNft<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -213,16 +218,16 @@ pub struct MintSbtNft<'info> {
        payer = authority, 
        seeds = [b"create_sbt_token", args.name.as_bytes()],
        mint::decimals = 0,
-       mint::authority = nft_mint_account,
-       mint::freeze_authority = nft_mint_account,
+       mint::authority = sbt_nft_mint_account,
+       mint::freeze_authority = sbt_nft_mint_account,
        bump,
     )]
-    pub nft_mint_account: Account<'info, Mint>,
+    pub sbt_nft_mint_account: Account<'info, Mint>,
 
     /// CHECK:
     #[account(
       mut,
-      seeds = [b"metadata", token_metadata_program.key().as_ref(), nft_mint_account.key().as_ref()],
+      seeds = [b"metadata", token_metadata_program.key().as_ref(), sbt_nft_mint_account.key().as_ref()],
       bump,
       seeds::program = token_metadata_program.key(),
     )]
@@ -231,7 +236,7 @@ pub struct MintSbtNft<'info> {
     /// CHECK:
     #[account(
       mut,
-      seeds = [b"metadata", token_metadata_program.key().as_ref(), nft_mint_account.key().as_ref(), b"edition".as_ref()],
+      seeds = [b"metadata", token_metadata_program.key().as_ref(), sbt_nft_mint_account.key().as_ref(), b"edition".as_ref()],
       bump,
       seeds::program = token_metadata_program.key(),
     )]
@@ -240,14 +245,29 @@ pub struct MintSbtNft<'info> {
     #[account(
       init_if_needed,
       payer = authority,
-      associated_token::mint = nft_mint_account,
+      associated_token::mint = sbt_nft_mint_account,
       associated_token::authority = authority,
     )]
     pub sbt_nft_associated_token_account: Account<'info, TokenAccount>,
+
+    #[account(
+      init_if_needed,
+      payer = authority,
+      seeds = ["sbt_nft_count".as_bytes(),],
+      bump,
+      space = 8 + SbtNftCount::INIT_SPACE,
+    )]
+    pub sbt_nft_count: Account<'info, SbtNftCount>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[error_code]
+pub enum NftErrorCode{
+  #[msg("NftCountOver")]
+  NftCountOver
 }

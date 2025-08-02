@@ -97,7 +97,7 @@ pub fn check_daily_reset_and_limit(
 
     // 检查是否超过最大次数
     if user_burn_info.get_burn_count(incense_type) >= 10 {
-        return Err(BurnCode::TooManyBurns.into());
+        return err!(BurnCode::TooManyBurns);
     }
 
     Ok(())

@@ -23,7 +23,7 @@ pub fn update_incense(
 ) -> Result<()> {
     let incense_rules_config = &mut ctx.accounts.incense_rules_config;
     if ctx.accounts.authority.key() != incense_rules_config.admin {
-        return Err(ErrorCode::NonAdministrator.into());
+        return err!(ErrorCode::NonAdministrator);
     }
     incense_rules_config.update_rule(incense_type, incense_rule);
     msg!("update_incense successfully");

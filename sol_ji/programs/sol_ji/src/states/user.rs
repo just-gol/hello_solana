@@ -32,7 +32,7 @@ pub struct UserInfo {
     // 今日免费次数
     pub wish_daily_count: u8,
 
-    // 创建时间
+    // 创建时间 => 判断是否早期用户
     pub create_at: i64,
 }
 
