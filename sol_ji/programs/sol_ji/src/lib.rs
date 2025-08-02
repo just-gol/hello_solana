@@ -48,4 +48,24 @@ pub mod sol_ji {
     pub fn draw_lots(ctx: Context<DrawLots>, value: u64) -> Result<()> {
         instructions::draw_lots(ctx, value)
     }
+
+    // 创建用户
+    pub fn create_wish_user(ctx: Context<CreateWishUser>) -> Result<()> {
+        instructions::create_wish_user(ctx)
+    }
+
+    // 创建许愿
+    pub fn create_wish(
+        ctx: Context<CreateWish>,
+        content: String,
+        value: u64,
+        is_anonymous: bool,
+    ) -> Result<()> {
+        instructions::create_wish(ctx, content, value, is_anonymous)
+    }
+
+    // 点赞
+    pub fn create_like(ctx: Context<CreateLike>) -> Result<()> {
+        instructions::create_like(ctx)
+    }
 }

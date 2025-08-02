@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct WishUser {
+    pub user: Pubkey,
     // 许愿次数
     pub total_count: u8,
     // 许愿时间
@@ -12,11 +13,12 @@ pub struct WishUser {
 }
 
 impl WishUser {
-    pub fn new() -> Self {
+    pub fn new(user: Pubkey) -> Self {
         Self {
             total_count: 0,
             update_time: Clock::get().unwrap().unix_timestamp,
             daily_count: 0,
+            user,
         }
     }
 

@@ -3,14 +3,14 @@ use anchor_lang::prelude::*;
 use crate::states::{PublishWish, UserBurnInfo, WishLike, WishUser};
 // 创建用户
 pub fn create_wish_user(ctx: Context<CreateWishUser>) -> Result<()> {
-    let wish_user = WishUser::new();
+    let wish_user = WishUser::new(ctx.accounts.authority.key());
     ctx.accounts.wish_user.set_inner(wish_user);
     msg!("create wish user success");
     Ok(())
 }
 
 // 许愿 value是扣除功德值
-pub fn wish(
+pub fn create_wish(
     ctx: Context<CreateWish>,
     content: String,
     value: u64,
@@ -74,7 +74,7 @@ pub struct CreateWish<'info> {
       init,
       payer = authority,
       space = 8 + PublishWish::INIT_SPACE,
-      seeds = [b"wish",wish_user.key().as_ref(),(wish_user.total_count+1).to_string().as_bytes()], 
+      seeds = [b"publish_wish",wish_user.key().as_ref(),(wish_user.total_count+1).to_string().as_bytes()], 
       bump
     )]
     pub publish_wish: Account<'info, PublishWish>,
@@ -116,7 +116,7 @@ pub struct CreateLike<'info> {
 
     // 点赞
     #[account(
-      init,
+      init_if_needed,
       payer = authority,
       space = 8 + WishLike::INIT_SPACE,
       seeds = [b"wish_like",wish_user.key().as_ref(),publish_wish.key().as_ref()], 

@@ -47,3 +47,16 @@ export function getLotteryRecordPda(count: number, wallet: anchor.Wallet) {
   );
   return pda;
 }
+
+// wish_user pda
+export function getWishUserPda(wallet: anchor.Wallet) {
+  let [pda] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("wish_user"), wallet.publicKey.toBuffer()], program.programId);
+  return pda;
+}
+
+// publish_wish PDA
+export function getPublishWishPda(count: number, wallet: anchor.Wallet) {
+  let wishUserPda = getWishUserPda(wallet);
+  let [pda] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("publish_wish"), wishUserPda.toBuffer(), Buffer.from(`${count + 1}`),], program.programId);
+  return pda;
+}

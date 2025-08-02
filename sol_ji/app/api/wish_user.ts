@@ -1,0 +1,51 @@
+import * as anchor from "@coral-xyz/anchor";
+import { program, provider } from "./wallet";
+import { getPublishWishPda, getWishUserPda } from "./address";
+export async function createWishUser() {
+  return await program.methods
+    .createWishUser()
+    .accounts({
+    })
+    .rpc();
+}
+
+export async function createWish(content: string, value: number, is_anonymous: boolean, wallet: anchor.Wallet)
+  : Promise<[any, anchor.web3.PublicKey]> {
+  let wishUserPda = getWishUserPda(wallet);
+  let wishUser = await program.account.wishUser.fetch(wishUserPda);
+  console.log("totalCount:", wishUser.totalCount);
+  let publishWishPda = getPublishWishPda(wishUser.totalCount, wallet);
+  let createWishResult = await program.methods
+    .createWish(content, new anchor.BN(value), is_anonymous)
+    .accounts({
+      publishWish: publishWishPda,
+    })
+    .rpc();
+  return [createWishResult, publishWishPda];
+}
+
+export async function createLike(publishWishPda: anchor.web3.PublicKey) {
+  return await program.methods
+    .createLike()
+    .accounts({
+      publishWish: publishWishPda,
+    })
+    .rpc();
+}
+
+export async function queryWish(publishWishPda: anchor.web3.PublicKey, wallet: anchor.Wallet) {
+  let [withUserPda] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("wish_user"), wallet.publicKey.toBuffer()], program.programId);
+  let withUser = await program.account.wishUser.fetch(withUserPda);
+
+  let publishWish = await program.account.publishWish.fetch(publishWishPda);
+
+  let [wishLikePda] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("wish_like"), withUserPda.toBuffer(), publishWishPda.toBuffer()], program.programId);
+  let wishLike = await program.account.wishLike.fetch(wishLikePda);
+
+  return [
+    withUser,
+    publishWish,
+    wishLike,
+  ]
+
+}
